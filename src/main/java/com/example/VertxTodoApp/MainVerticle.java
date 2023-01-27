@@ -2,22 +2,29 @@ package com.example.VertxTodoApp;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.ext.web.Router;
 
 public class MainVerticle extends AbstractVerticle {
 
   @Override
-  public void start(Promise<Void> startPromise) throws Exception {
-    vertx.createHttpServer().requestHandler(req -> {
-      req.response()
-        .putHeader("content-type", "text/plain")
-        .end("Hello from Vert.x!");
-    }).listen(8888, http -> {
-      if (http.succeeded()) {
-        startPromise.complete();
-        System.out.println("HTTP server started on port 8888");
-      } else {
-        startPromise.fail(http.cause());
-      }
+  public void start(){
+
+    // Create a Router
+    Router router = Router.router(vertx);
+
+    // Endpoint 1
+    router.get("/api/v1/hello").handler( ctx -> {
+      ctx.request().response().end("Hello from the /api/v1/hello endpoint!");
     });
+
+    // Endpoint 2 with param (add /:name to route)
+    router.get("/api/v1/hello/:name").handler( ctx -> {
+      String name = ctx.pathParam("name");
+      ctx.request().response().end(String.format("Hello from the /api/v1/hello with params: %s!", name));
+    });
+
+    // Create the Http server, but set the servers hanlder to the router
+    vertx.createHttpServer().requestHandler(router).listen(8080);
+
   }
 }
