@@ -21,6 +21,11 @@ To run your application:
 ./mvnw clean compile exec:java
 ```
 
+== DOcker
+
+docker-compose up
+docker-compose down
+
 == Help
 
 * https://vertx.io/docs/[Vert.x Documentation]

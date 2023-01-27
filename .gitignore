@@ -1,5 +1,6 @@
 ### Vert.x ###
 .vertx/
+postgres-data/
 
 ### Eclipse ###
 
