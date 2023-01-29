@@ -12,6 +12,29 @@ public class MainVerticle extends AbstractVerticle {
     // Create a Router
     Router router = Router.router(vertx);
 
+    // Separate out, webserver, router, endpointService etc.
+
+    // User endpoints
+    // create user?
+    // get user?
+    // update user?
+    // delete user and all todos.
+
+    // Should we use auth?
+    // see what the ad-server uses.
+
+    // Mutate endpoints
+    // create todos
+    // delete todos
+    // edit todos
+
+    // Get endpoints
+    // get todos
+    // get all todo, (completed, pending or both) separate by status
+
+    // Decide between mutiple instances of the main verticle or multiple instances of the applications.
+
+
     // Endpoint 1
     router.get("/api/v1/todo").handler( ctx -> {
       ctx.request().response().end("Hello from the /api/v1/hello endpoint!");
