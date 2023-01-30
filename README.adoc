@@ -23,6 +23,9 @@ To run your application:
 
 == DOcker
 
+For M1:
+docker pull --platform linux/x86_64 mysql
+
 docker-compose up
 docker-compose down
 
