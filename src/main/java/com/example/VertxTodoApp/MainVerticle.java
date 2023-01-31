@@ -1,13 +1,9 @@
 package com.example.VertxTodoApp;
 
-import com.example.VertxTodoApp.EventBusConsumerVerticles.TodoConsumerVerticle;
+import com.example.VertxTodoApp.EventBusConsumers.TodoConsumerVerticle;
 import io.vertx.core.*;
 
-/**
- * Currently the main verticle only performs a deployment of
- * all the applications verticles
- * each verticle will handle its own setup, its self.
- */
+
 public class MainVerticle extends AbstractVerticle {
 
   @Override
