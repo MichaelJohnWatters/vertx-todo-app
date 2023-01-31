@@ -1,5 +1,6 @@
 package com.example.VertxTodoApp;
 
+import com.example.VertxTodoApp.Database.DatabaseVerticle;
 import com.example.VertxTodoApp.EventBusConsumers.TodoConsumerVerticle;
 import io.vertx.core.*;
 
@@ -14,7 +15,8 @@ public class MainVerticle extends AbstractVerticle {
   void deployAllVerticles(Promise<Void> start){
     CompositeFuture.all(
       vertx.deployVerticle(new HttpServerVerticle()),
-      vertx.deployVerticle(new TodoConsumerVerticle())
+      vertx.deployVerticle(new TodoConsumerVerticle()),
+      vertx.deployVerticle(new DatabaseVerticle())
     ).onComplete(compositeFutureResult -> {
       if (compositeFutureResult.succeeded()) {
         start.complete();

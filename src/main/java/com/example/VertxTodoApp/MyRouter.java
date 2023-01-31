@@ -3,6 +3,7 @@ package com.example.VertxTodoApp;
 import com.example.VertxTodoApp.EventBusConsumers.EventBusAddresses;
 import com.example.VertxTodoApp.EventBusConsumers.EventBusMessageReply;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -15,11 +16,9 @@ public class MyRouter {
   public MyRouter(Vertx vertx) {
     Router router = Router.router(vertx);
 
-    // Post Methods.
-    //    router.post().handler(BodyHandler.create());
-
     // Get Methods
     router.get("/todo/:todo_id").handler(this::getSingleTodoHandler);
+    router.get("/todos").handler(this::getAllTodos);
 
     this.vertxRouter = router;
     this.vertx = vertx;
@@ -58,15 +57,42 @@ public class MyRouter {
 //    context.response().end();
 //  }
 
+
   private void getSingleTodoHandler(RoutingContext context) {
     String user_id = context.request().getHeader("Authorization");
     String todoId = context.pathParam("todo_id"); // possible null.
 
-    this.vertx.eventBus().request(EventBusAddresses.GET_SINGLE_TODO, todoId, reply -> {
+    this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.GET_SINGLE_TODO, todoId, reply -> {
 
       if(reply.succeeded()) {
 
-        EventBusMessageReply replyObject = (EventBusMessageReply) reply.result();
+        EventBusMessageReply replyObject = reply.result().body();
+
+        if (replyObject.getError()){
+          context.response().setStatusCode(replyObject.getStatusCode());
+          context.request().response().end(replyObject.getMessageReplyJsonObject().encode());
+        }
+
+        context.request().response().end(
+          replyObject.getMessageReplyJsonObject().encode()
+        );
+
+      } else {
+        context.response().setStatusCode(500);
+        context.request().response().end("Internal Server Error");
+      }
+    });
+  }
+
+  private void getAllTodos(RoutingContext context) {
+    String user_id = context.request().getHeader("Authorization");
+    String todoId = context.pathParam("todo_id"); // possible null.
+
+    this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.GET_ALL_TODOS, "", reply -> {
+
+      if(reply.succeeded()) {
+
+        EventBusMessageReply replyObject = reply.result().body();
 
         if (replyObject.getError()){
           context.response().setStatusCode(replyObject.getStatusCode());
