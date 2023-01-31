@@ -3,37 +3,28 @@ package com.example.VertxTodoApp;
 import com.example.VertxTodoApp.EventBusConsumerVerticles.TodoConsumerVerticle;
 import io.vertx.core.*;
 
+/**
+ * Currently the main verticle only performs a deployment of
+ * all the applications verticles
+ * each verticle will handle its own setup, its self.
+ */
 public class MainVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> start) {
-
-
-//    Promise<String> dbVerticleDeployment = Promise.promise();  // <1>
-//    vertx.deployVerticle(new WikiDatabaseVerticle(), dbVerticleDeployment);  // <2>
-
     deployAllVerticles(start);
-
-//      .onComplete(ar -> {   // <7>
-//      if (ar.succeeded()) {
-//        start.complete();
-//      } else {
-//        start.fail(ar.cause());
-//      }
-//    });
   }
 
-  CompositeFuture deployAllVerticles(Promise<Void> start){
-    return CompositeFuture.all(
+  void deployAllVerticles(Promise<Void> start){
+    CompositeFuture.all(
       vertx.deployVerticle(new HttpServerVerticle()),
       vertx.deployVerticle(new TodoConsumerVerticle())
-    ).onComplete(ar -> {
-      if (ar.succeeded()) {
-        // All servers startedz
+    ).onComplete(compositeFutureResult -> {
+      if (compositeFutureResult.succeeded()) {
         start.complete();
       } else {
         // At least one server failed
-        start.fail(ar.cause());
+        start.fail(compositeFutureResult.cause());
       }
     });
   }

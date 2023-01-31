@@ -14,13 +14,11 @@ public class HttpServerVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> start) throws Exception {
-
-    Router router = MyRouter.buildRoutes(vertx);
-
-    loadConfigAndCreateWebsevber(start, router);
+    Router router = new MyRouter(vertx).getVertxRouter();
+    buildWebserver(start, router);
   }
 
-  private void loadConfigAndCreateWebsevber(Promise<Void> start, Router router) {
+  private void buildWebserver(Promise<Void> start, Router router) {
     // What if you want to add configuration, this will add a config store
     ConfigStoreOptions defaultConfig = new ConfigStoreOptions()
       .setType("file")
