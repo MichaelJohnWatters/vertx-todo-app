@@ -18,6 +18,7 @@ public class HttpServerVerticle extends AbstractVerticle {
     buildWebserver(start, router);
   }
 
+  // Move all this config buidling to the Main Vert before the deploy?
   private void buildWebserver(Promise<Void> start, Router router) {
     // What if you want to add configuration, this will add a config store
     ConfigStoreOptions defaultConfig = new ConfigStoreOptions()
@@ -39,14 +40,11 @@ public class HttpServerVerticle extends AbstractVerticle {
 
   void buildHttpServerFromConfig(Promise<Void> start, Router router, AsyncResult<JsonObject> aysncresult) {
     if(aysncresult.succeeded()) {
-
       JsonObject config = aysncresult.result();
       JsonObject http = config.getJsonObject("http");
       int httport = http.getInteger("port");
       vertx.createHttpServer().requestHandler(router).listen(httport);
-
       start.complete();
-
     } else {
       // do somthing bla bla
       start.fail("Unable to load config.");

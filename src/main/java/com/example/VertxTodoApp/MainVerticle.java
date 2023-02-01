@@ -24,7 +24,6 @@ public class MainVerticle extends AbstractVerticle {
       .setPassword("password");
 
     PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
-
     MySQLPool pool = MySQLPool.pool(vertx, connectOptions, poolOptions);
 
     CompositeFuture.all(
