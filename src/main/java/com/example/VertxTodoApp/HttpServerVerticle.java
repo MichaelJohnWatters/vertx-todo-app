@@ -33,11 +33,11 @@ public class HttpServerVerticle extends AbstractVerticle {
     ConfigRetriever cfgRetriever = ConfigRetriever.create(vertx, opts);
 
     // This is a curried
-    Handler<AsyncResult<JsonObject>> handler = asyncResult -> this.handleConfigResults(start,router,asyncResult);
+    Handler<AsyncResult<JsonObject>> handler = asyncResult -> this.buildHttpServerFromConfig(start,router,asyncResult);
     cfgRetriever.getConfig(handler);
   }
 
-  void handleConfigResults(Promise<Void> start, Router router, AsyncResult<JsonObject> aysncresult) {
+  void buildHttpServerFromConfig(Promise<Void> start, Router router, AsyncResult<JsonObject> aysncresult) {
     if(aysncresult.succeeded()) {
 
       JsonObject config = aysncresult.result();

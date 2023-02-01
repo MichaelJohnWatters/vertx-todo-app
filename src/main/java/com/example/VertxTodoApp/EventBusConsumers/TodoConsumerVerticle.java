@@ -4,9 +4,13 @@ import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusAddr
 import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMessageReply;
 import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMessageReplyCodec;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mysqlclient.MySQLPool;
-import io.vertx.sqlclient.PoolOptions;
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowSet;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class TodoConsumerVerticle extends AbstractVerticle {
@@ -26,16 +30,26 @@ public class TodoConsumerVerticle extends AbstractVerticle {
 
     // Get Single Todos Consumer
     vertx.eventBus().consumer(EventBusAddresses.GET_SINGLE_TODO, message -> {
-      // TODO database Verticle
       String extractedTodoId = (String) message.body();
 
-      runSqlQuery("");
-
       if (extractedTodoId == null){
-        message.reply(new EventBusMessageReply(true, new JsonObject().put("error", "oh no todo_id is null"), 422));
+        message.reply(new EventBusMessageReply(true, new JsonObject().put("Invalid Param", "todo_id is null"), 422));
       }
 
-      message.reply(new EventBusMessageReply(false, new JsonObject().put("created", "yeoo"), 200));
+      // Note: Sql injection
+      RowSet<Row> results = runSqlQuery("SELECT * FROM todos WHERE todo_id = " + Integer.parseInt( extractedTodoId));
+
+      if (results == null){
+        message.reply(new EventBusMessageReply(true, new JsonObject().put("Not Found", "Not results for todo_id: " + extractedTodoId), 404));
+      }
+
+      assert results != null;
+      System.out.println(results.columnsNames());
+
+      message.reply(
+        new EventBusMessageReply(false, new JsonObject().put("todo_id", 1).put("name", 1).put("content", 1)
+        , 200)
+      );
     });
 
     // Get All Todos Consumer
@@ -45,12 +59,11 @@ public class TodoConsumerVerticle extends AbstractVerticle {
     });
   }
 
-  void runSqlQuery(String sql) {
-    // Get a connection from the pool
+  RowSet<Row> runSqlQuery(String sql) {
+
+
     pool.getConnection().compose(conn -> {
       System.out.println("Got a connection from the pool");
-
-      // All operations execute on the same connection
       return conn
         .query(sql)
         .execute()
@@ -60,10 +73,14 @@ public class TodoConsumerVerticle extends AbstractVerticle {
         });
     }).onComplete(ar -> {
       if (ar.succeeded()) {
+        RowSet<Row> result = ar.result();
         System.out.println("Done");
       } else {
         System.out.println("Something went wrong " + ar.cause().getMessage());
       }
     });
+
+
+    return null;
   }
 }
