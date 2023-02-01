@@ -68,15 +68,17 @@ public class MyRouter {
         EventBusMessageReply replyObject = reply.result().body();
 
         if (replyObject.getError()){
+          System.out.println("getError");
           context.response().setStatusCode(replyObject.getStatusCode());
           context.request().response().end(replyObject.getMessageReplyJsonObject().encode());
+        } else {
+          System.out.println("seems good");
+          context.request().response().end(
+            replyObject.getMessageReplyJsonObject().encode()
+          );
         }
-
-        context.request().response().end(
-          replyObject.getMessageReplyJsonObject().encode()
-        );
-
       } else {
+        System.out.println("500 oh dear");
         context.response().setStatusCode(500);
         context.request().response().end("Internal Server Error");
       }
@@ -94,15 +96,17 @@ public class MyRouter {
         EventBusMessageReply replyObject = reply.result().body();
 
         if (replyObject.getError()){
+          System.out.println("getError");
           context.response().setStatusCode(replyObject.getStatusCode());
           context.request().response().end(replyObject.getMessageReplyJsonObject().encode());
+        } else {
+          System.out.println("seems good");
+          context.request().response().end(
+            replyObject.getMessageReplyJsonObject().encode()
+          );
         }
-
-        context.request().response().end(
-          replyObject.getMessageReplyJsonObject().encode()
-        );
-
       } else {
+        System.out.println("500 oh dear");
         context.response().setStatusCode(500);
         context.request().response().end("Internal Server Error");
       }

@@ -39,10 +39,13 @@ public class TodoConsumerVerticle extends AbstractVerticle {
       // Note: Sql injection
       RowSet<Row> results = runSqlQuery("SELECT * FROM todos WHERE todo_id = " + Integer.parseInt( extractedTodoId));
 
+      System.out.println(results);
+
       if (results == null){
         message.reply(new EventBusMessageReply(true, new JsonObject().put("Not Found", "Not results for todo_id: " + extractedTodoId), 404));
       } else {
         System.out.println(results.columnsNames());
+        System.out.println(results);
 
         message.reply(
           new EventBusMessageReply(false, new JsonObject().put("todo_id", 1).put("name", 1).put("content", 1)
@@ -59,9 +62,7 @@ public class TodoConsumerVerticle extends AbstractVerticle {
   }
 
   RowSet<Row> runSqlQuery(String sql) {
-
-
-    pool.getConnection().compose(conn -> {
+    var queryResult = pool.getConnection().compose(conn -> {
       System.out.println("Got a connection from the pool");
       return conn
         .query(sql)
@@ -79,7 +80,6 @@ public class TodoConsumerVerticle extends AbstractVerticle {
       }
     });
 
-
-    return null;
+    return queryResult.result();
   }
 }
