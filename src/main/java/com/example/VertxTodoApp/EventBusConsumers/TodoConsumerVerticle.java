@@ -5,6 +5,9 @@ import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMess
 import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMessageReplyCodec;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mysqlclient.MySQLPool;
 import io.vertx.sqlclient.Row;
@@ -23,10 +26,8 @@ public class TodoConsumerVerticle extends AbstractVerticle {
 
   @Override
   public void start() {
-
     // Register Codecs
     vertx.eventBus().registerDefaultCodec(EventBusMessageReply.class, new EventBusMessageReplyCodec());
-
 
     // Get Single Todos Consumer
     vertx.eventBus().consumer(EventBusAddresses.GET_SINGLE_TODO, message -> {
@@ -37,49 +38,82 @@ public class TodoConsumerVerticle extends AbstractVerticle {
       }
 
       // Note: Sql injection
-      RowSet<Row> results = runSqlQuery("SELECT * FROM todos WHERE todo_id = " + Integer.parseInt( extractedTodoId));
+      Future<RowSet<Row>> futureResults = runSqlQuery("SELECT * FROM todos WHERE todo_id = " + Integer.parseInt( extractedTodoId) + " LIMIT 1");
 
-      System.out.println(results);
+      futureResults.andThen( rowSetAsyncResult -> {
+        if(rowSetAsyncResult.succeeded()){
+          var rows = rowSetAsyncResult.result();
+          if  (rows == null) {
+            message.reply(new EventBusMessageReply(true, new JsonObject().put("Not Found", "Not results for todo_id: " + extractedTodoId), 404));
+          }
+          else {
 
-      if (results == null){
-        message.reply(new EventBusMessageReply(true, new JsonObject().put("Not Found", "Not results for todo_id: " + extractedTodoId), 404));
-      } else {
-        System.out.println(results.columnsNames());
-        System.out.println(results);
+            Integer todo_id = null;
+            String name = null;
+            String content = null;
 
-        message.reply(
-          new EventBusMessageReply(false, new JsonObject().put("todo_id", 1).put("name", 1).put("content", 1)
-            , 200)
-        );
-      }
+            for (Row row : rows) {
+              todo_id = row.getInteger("todo_id");
+              name = row.getString("name");
+              content = row.getString("content");
+            }
+
+            JsonObject json = new JsonObject()
+              .put("todo_id", todo_id)
+              .put("name", name)
+              .put("content", content);
+
+            message.reply(new EventBusMessageReply(false, json, 200));
+          }
+        } else {
+          message.reply(new EventBusMessageReply(true, new JsonObject().put("Internal Server Error", "somthing is dead in " + EventBusAddresses.GET_ALL_TODOS), 500));
+        }
+      });
     });
 
     // Get All Todos Consumer
-    vertx.eventBus().consumer(EventBusAddresses.GET_SINGLE_TODO, message -> {
-      // TODO database Verticle
-      message.reply(new EventBusMessageReply(false, new JsonObject().put("created", "yeoo"), 200));
+    vertx.eventBus().consumer(EventBusAddresses.GET_ALL_TODOS, message -> {
+
+      // Note: Sql injection
+      Future<RowSet<Row>> futureResults = runSqlQuery("SELECT * FROM todos WHERE todo_id");
+
+      futureResults.andThen( rowSetAsyncResult -> {
+        if(rowSetAsyncResult.succeeded()){
+          var rows = rowSetAsyncResult.result();
+          if  (rows == null) {
+            message.reply(new EventBusMessageReply(true, new JsonObject().put("Not Found", "No results found"), 404));
+          }
+          else {
+            JsonArray json = new JsonArray();
+            for (Row row : rows) {
+              json.add(
+                  new JsonObject()
+                  .put("todo_id",  row.getInteger("todo_id"))
+                  .put("name", row.getString("name"))
+                  .put("content", row.getString("content"))
+                );
+            }
+            message.reply(new EventBusMessageReply(false, new JsonObject().put("results", json), 200));
+          }
+        } else {
+          message.reply(new EventBusMessageReply(true, new JsonObject().put("Internal Server Error", "somthing is dead in " + EventBusAddresses.GET_ALL_TODOS), 500));
+        }
+      });
     });
   }
 
-  RowSet<Row> runSqlQuery(String sql) {
-    var queryResult = pool.getConnection().compose(conn -> {
-      System.out.println("Got a connection from the pool");
-      return conn
-        .query(sql)
-        .execute()
-        .onComplete(ar -> {
-          // Release the connection to the pool
-          conn.close();
-        });
-    }).onComplete(ar -> {
+  private Future<RowSet<Row>> runSqlQuery(String sql) {
+    return pool.getConnection().compose(conn -> conn
+      .query(sql)
+      .execute()
+      .onComplete(ar -> {
+        conn.close();
+      })).onComplete(ar -> {
       if (ar.succeeded()) {
-        RowSet<Row> result = ar.result();
         System.out.println("Done");
       } else {
         System.out.println("Something went wrong " + ar.cause().getMessage());
       }
     });
-
-    return queryResult.result();
   }
 }
