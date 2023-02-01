@@ -1,4 +1,4 @@
-package com.example.VertxTodoApp.EventBusConsumers;
+package com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging;
 
 public class EventBusAddresses {
   public static final  String GET_SINGLE_TODO = "get.todo.address";

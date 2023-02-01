@@ -1,9 +1,8 @@
 package com.example.VertxTodoApp;
 
-import com.example.VertxTodoApp.EventBusConsumers.EventBusAddresses;
-import com.example.VertxTodoApp.EventBusConsumers.EventBusMessageReply;
+import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusAddresses;
+import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMessageReply;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.Message;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 

@@ -1,5 +1,6 @@
-package com.example.VertxTodoApp.EventBusConsumers;
+package com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging;
 
+import com.example.VertxTodoApp.EventBusConsumers.Utils.ObjectMapperInstance;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;

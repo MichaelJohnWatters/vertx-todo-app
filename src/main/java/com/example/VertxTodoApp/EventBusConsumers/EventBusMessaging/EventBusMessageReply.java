@@ -1,4 +1,4 @@
-package com.example.VertxTodoApp.EventBusConsumers;
+package com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging;
 
 import io.vertx.core.json.JsonObject;
 
