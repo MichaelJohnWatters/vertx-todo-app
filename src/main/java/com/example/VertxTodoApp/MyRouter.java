@@ -2,7 +2,9 @@ package com.example.VertxTodoApp;
 
 import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusAddresses;
 import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMessageReply;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -30,52 +32,31 @@ public class MyRouter {
   private void getSingleTodoHandler(RoutingContext context) {
     String user_id = context.request().getHeader("Authorization");
     String todoId = context.pathParam("todo_id"); // possible null.
-
-    this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.GET_SINGLE_TODO, todoId, reply -> {
-      if(reply.succeeded()) {
-
-        EventBusMessageReply replyObject = reply.result().body();
-
-        if (replyObject.getError()){
-          context.response().setStatusCode(replyObject.getStatusCode());
-          context.request().response().end(replyObject.getMessageReplyJsonObject().encode());
-        } else {
-          context.request().response().end(
-            replyObject.getMessageReplyJsonObject().encode()
-          );
-        }
-      } else {
-        context.response().setStatusCode(500);
-        context.request().response().end("Internal Server Error: failed to send request to EventBus");
-      }
-    });
+    this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.GET_SINGLE_TODO, todoId, reply -> setResponse(reply, context));
   }
 
   private void getAllTodos(RoutingContext context) {
     String user_id = context.request().getHeader("Authorization");
-    String todoId = context.pathParam("todo_id"); // possible null.
+    this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.GET_ALL_TODOS, "", reply -> setResponse(reply, context));
+  }
 
-    this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.GET_ALL_TODOS, "", reply -> {
+  private void setResponse(AsyncResult<Message<EventBusMessageReply>> reply, RoutingContext context){
+    if(reply.succeeded()) {
 
-      if(reply.succeeded()) {
+      // Extract the message from the Eventbus
+      EventBusMessageReply replyObject = reply.result().body();
 
-        EventBusMessageReply replyObject = reply.result().body();
+      // Set the response body.
+      context.request().response().end(replyObject.getMessageReplyJsonObject().encode());
 
-        if (replyObject.getError()){
-          System.out.println("getError");
-          context.response().setStatusCode(replyObject.getStatusCode());
-          context.request().response().end(replyObject.getMessageReplyJsonObject().encode());
-        } else {
-          System.out.println("seems good");
-          context.request().response().end(
-            replyObject.getMessageReplyJsonObject().encode()
-          );
-        }
-      } else {
-        System.out.println("500 oh dear");
-        context.response().setStatusCode(500);
-        context.request().response().end("Internal Server Error");
+      // Set status code if was error
+      if (replyObject.getError()){
+        context.response().setStatusCode(replyObject.getStatusCode());
       }
-    });
+
+    } else {
+      context.response().setStatusCode(500);
+      context.request().response().end("Internal Server Error: failed to send request to EventBus");
+    }
   }
 }
