@@ -32,7 +32,6 @@ public class TodoConsumerVerticle extends AbstractVerticle {
     // Get Single Todos Consumer
     vertx.eventBus().consumer(EventBusAddresses.GET_SINGLE_TODO, message -> {
       String extractedTodoId = (String) message.body();
-
       if (extractedTodoId == null){
         message.reply(new EventBusMessageReply(true, new JsonObject().put("Invalid Param", "todo_id is null"), 422));
       }
@@ -94,6 +93,48 @@ public class TodoConsumerVerticle extends AbstractVerticle {
                 );
             }
             message.reply(new EventBusMessageReply(false, new JsonObject().put("results", json), 200));
+          }
+        } else {
+          message.reply(new EventBusMessageReply(true, new JsonObject().put("Internal Server Error", "somthing is dead in " + EventBusAddresses.GET_ALL_TODOS), 500));
+        }
+      });
+    });
+
+    // Delete Single Todos Consumer
+    vertx.eventBus().consumer(EventBusAddresses.DELETE_TODO, message -> {
+      String extractedTodoId = (String) message.body();
+      if (extractedTodoId == null){
+        message.reply(new EventBusMessageReply(true, new JsonObject().put("Invalid Param", "todo_id is null"), 422));
+      }
+
+      // Note: Sql injection
+      Future<RowSet<Row>> futureResults = runSqlQuery("DELETE FROM todos WHERE todo_id = " + Integer.parseInt( extractedTodoId));
+
+      futureResults.andThen( rowSetAsyncResult -> {
+        if(rowSetAsyncResult.succeeded()){
+          var rows = rowSetAsyncResult.result();
+
+          if  (rows == null) {
+            message.reply(new EventBusMessageReply(true, new JsonObject().put("Not Found", "Not results for todo_id: " + extractedTodoId), 404));
+          }
+          else {
+
+            Integer todo_id = null;
+            String name = null;
+            String content = null;
+
+            for (Row row : rows) {
+              todo_id = row.getInteger("todo_id");
+              name = row.getString("name");
+              content = row.getString("content");
+            }
+
+            JsonObject json = new JsonObject()
+              .put("todo_id", todo_id)
+              .put("name", name)
+              .put("content", content);
+
+            message.reply(new EventBusMessageReply(false, json, 200));
           }
         } else {
           message.reply(new EventBusMessageReply(true, new JsonObject().put("Internal Server Error", "somthing is dead in " + EventBusAddresses.GET_ALL_TODOS), 500));

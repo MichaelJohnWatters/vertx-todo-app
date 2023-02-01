@@ -20,6 +20,7 @@ public class MyRouter {
     // Get Methods
     router.get("/todo/:todo_id").handler(this::getSingleTodoHandler);
     router.get("/todos").handler(this::getAllTodos);
+    router.delete("/todo_delete/:todo_id").handler(this::deleteSingleTodoHandler);
 
     this.vertxRouter = router;
     this.vertx = vertx;
@@ -38,6 +39,12 @@ public class MyRouter {
   private void getAllTodos(RoutingContext context) {
     String user_id = context.request().getHeader("Authorization");
     this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.GET_ALL_TODOS, "", reply -> setResponse(reply, context));
+  }
+
+  private void deleteSingleTodoHandler(RoutingContext context) {
+    String user_id = context.request().getHeader("Authorization");
+    String todoId = context.pathParam("todo_id"); // possible null.
+    this.vertx.eventBus().<EventBusMessageReply>request(EventBusAddresses.DELETE_TODO, todoId, reply -> setResponse(reply, context));
   }
 
   private void setResponse(AsyncResult<Message<EventBusMessageReply>> reply, RoutingContext context){
