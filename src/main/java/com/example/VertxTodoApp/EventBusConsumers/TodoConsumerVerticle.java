@@ -1,8 +1,6 @@
 package com.example.VertxTodoApp.EventBusConsumers;
 
-import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusAddresses;
-import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMessageReply;
-import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.EventBusMessageReplyCodec;
+import com.example.VertxTodoApp.EventBusConsumers.EventBusMessaging.*;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -28,6 +26,33 @@ public class TodoConsumerVerticle extends AbstractVerticle {
   public void start() {
     // Register Codecs
     vertx.eventBus().registerDefaultCodec(EventBusMessageReply.class, new EventBusMessageReplyCodec());
+    vertx.eventBus().registerDefaultCodec(EventBusMessageRequest.class, new EventBusMessageRequestCodec());
+
+
+    // Create a new todo
+    vertx.eventBus().consumer(EventBusAddresses.CREATE_TODO, message -> {
+      EventBusMessageRequest extractedEventBusMessageRequest = (EventBusMessageRequest) message.body();
+
+      int userId = Integer.parseInt(extractedEventBusMessageRequest.getUser_id());
+      JsonObject params = extractedEventBusMessageRequest.getParams();
+      String name =  params.getString("name");
+      String content = params.getString("content");
+
+      // TODO check the user exists.
+
+      // Note: Sql injection
+      Future<RowSet<Row>> futureResults = runSqlQuery(
+        String.format("INSERT INTO todos (user_id, name, content) VALUES (%s, '%s', '%s');", userId, name, content)
+      );
+
+      futureResults.andThen( rowSetAsyncResult -> {
+        if(rowSetAsyncResult.succeeded()){
+          message.reply(new EventBusMessageReply(false, new JsonObject().put("Created", "from " + EventBusAddresses.CREATE_TODO), 201));
+        } else {
+          message.reply(new EventBusMessageReply(true, new JsonObject().put("Internal Server Error", "somthing is dead in " + EventBusAddresses.CREATE_TODO), 500));
+        }
+      });
+    });
 
     // Get Single Todos Consumer
     vertx.eventBus().consumer(EventBusAddresses.GET_SINGLE_TODO, message -> {
@@ -72,9 +97,12 @@ public class TodoConsumerVerticle extends AbstractVerticle {
 
     // Get All Todos Consumer
     vertx.eventBus().consumer(EventBusAddresses.GET_ALL_TODOS, message -> {
+      EventBusMessageRequest extractedEventBusMessageRequest = (EventBusMessageRequest) message.body();
+
+      int userId = Integer.parseInt(extractedEventBusMessageRequest.getUser_id());
 
       // Note: Sql injection
-      Future<RowSet<Row>> futureResults = runSqlQuery("SELECT * FROM todos WHERE todo_id");
+      Future<RowSet<Row>> futureResults = runSqlQuery("SELECT * FROM todos WHERE user_id = " + userId);
 
       futureResults.andThen( rowSetAsyncResult -> {
         if(rowSetAsyncResult.succeeded()){
