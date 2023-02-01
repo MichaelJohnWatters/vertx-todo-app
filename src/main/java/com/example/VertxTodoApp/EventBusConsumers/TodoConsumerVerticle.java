@@ -41,15 +41,14 @@ public class TodoConsumerVerticle extends AbstractVerticle {
 
       if (results == null){
         message.reply(new EventBusMessageReply(true, new JsonObject().put("Not Found", "Not results for todo_id: " + extractedTodoId), 404));
+      } else {
+        System.out.println(results.columnsNames());
+
+        message.reply(
+          new EventBusMessageReply(false, new JsonObject().put("todo_id", 1).put("name", 1).put("content", 1)
+            , 200)
+        );
       }
-
-      assert results != null;
-      System.out.println(results.columnsNames());
-
-      message.reply(
-        new EventBusMessageReply(false, new JsonObject().put("todo_id", 1).put("name", 1).put("content", 1)
-        , 200)
-      );
     });
 
     // Get All Todos Consumer
